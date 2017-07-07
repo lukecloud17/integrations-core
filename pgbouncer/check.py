@@ -59,6 +59,7 @@ class PgBouncer(AgentCheck):
             ('sv_tested',            ('pgbouncer.pools.sv_tested', GAUGE)),
             ('sv_login',             ('pgbouncer.pools.sv_login', GAUGE)),
             ('maxwait',              ('pgbouncer.pools.maxwait', GAUGE)),
+            ('maxwait_us',           ('pgbouncer.pools.maxwait_us', GAUGE)),
         ],
         'query': """SHOW POOLS""",
     }
@@ -118,6 +119,8 @@ class PgBouncer(AgentCheck):
                     tags += ["%s:%s" % (d[0][1], d[1]) for d in zip(desc, row[:len(desc)])]
                     for i, (key_name, (mname, mtype)) in enumerate(metrics):
                         value = row[i + len(desc)]
+                        if mname == 'maxwait_us':  # Add the seconds component when computing maxwait_us
+                            value += int(row[(i-1) + len(desc)]) * 1000000
                         mtype(self, mname, value, tags)
 
             if not results:
